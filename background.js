@@ -41,12 +41,8 @@ var WhybugChrome = {
   injectWhybug: function (tab, enabled) {
     if (enabled) {
       chrome.tabs.executeScript(tab.id, {
-        file: './TraceKit.js', 
+        file: './inject.js', 
         runAt: 'document_start'
-      });
-      chrome.tabs.executeScript(tab.id, {
-        file: './WhybugTracker.js', 
-        runAt: 'document_end'
       });
     }
   },
@@ -59,7 +55,6 @@ var WhybugChrome = {
   toggleStatus: function (tab) {
       var domain = this.getDomainFromTab(tab);
       this.storage.get(domain, function(setting) {
-        console.log('toggle status', domain, setting)
         setting[domain] = !setting[domain];
         WhybugChrome.storage.set(setting, function() {
           WhybugChrome.updateTab(tab);
@@ -77,7 +72,6 @@ var WhybugChrome = {
   getStatus: function (tab, callback) {
       var domain = this.getDomainFromTab(tab);
       this.storage.get(domain, function(setting) {
-        console.log('status for', domain, setting[domain])
         callback(setting[domain] || false);
       });
   },
@@ -94,7 +88,7 @@ var WhybugChrome = {
 };
 
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-    if (changeInfo.status !== 'complete') {return;}
+    if (changeInfo.status !== 'loading') {return;}
 
     WhybugChrome.updateTab(tab);
 });
@@ -130,11 +124,8 @@ chrome.pageAction.onClicked.addListener(function(tab) {
 /*
 Ideas:
 
- - Activate/deactivate per domain
+ - Activate/deactivate per domain @done
  - register general javascript error handler
- - register angular/ember/... error handler
+ - register angular/ember/... error handler 
  - show red dot when solutions are found?
- -  
-
-
 */

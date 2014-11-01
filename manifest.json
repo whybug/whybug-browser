@@ -16,5 +16,10 @@
     "scripts": ["background.js"] 
   },
 
+  "web_accessible_resources": [
+    "WhybugTracker.js"
+  ],
+
+
   "page_action": {}
 }
