@@ -1,11 +1,12 @@
 // Copyright (c) 2014 Adrian Philipp <info@whybug.com>
+
 /**
  * Chrome integration for whybug.
  * 
  * @type {Object}
  */
 var WhybugChrome = {
-  
+
   /**
    * Storage to use for domain .
    * 
@@ -13,19 +14,30 @@ var WhybugChrome = {
    */
   storage: chrome.storage.sync,
 
+  updateTab: function (tab) {
+    this.getStatus(tab, function (enabled) {
+      WhybugChrome.updateIcon(tab, enabled);
+      WhybugChrome.injectWhybug(tab, enabled);
+    })
+  },
+
   /**
    * Updates icon for the specified tab.
    *  
    * @param {Objectl} tab Chrome tab instance.
    */
-  updateIcon: function (tab) {
-    this.getStatus(tab, function (enabled) {
-      chrome.pageAction.setIcon({
-        tabId: tab.id,
-        path: "./icon" + (enabled ? 2 : 1) + ".png"
-      });
-      chrome.pageAction.show(tab.id);
-    })
+  updateIcon: function (tab, enabled) {
+    chrome.pageAction.setIcon({
+      tabId: tab.id,
+      path: "./icon" + (enabled ? 2 : 1) + ".png"
+    });
+    chrome.pageAction.show(tab.id);
+  },
+
+  injectWhybug: function (tab, enabled) {
+    if (enabled) {
+      chrome.tabs.executeScript(tab.id, {file: './WhybugTracker.js', runAt: 'document_start'});
+    }
   },
 
   /**
@@ -39,7 +51,7 @@ var WhybugChrome = {
         console.log('toggle status', domain, setting)
         setting[domain] = !setting[domain];
         WhybugChrome.storage.set(setting, function() {
-          WhybugChrome.updateIcon(tab);
+          WhybugChrome.updateTab(tab);
         });
       });
   },
@@ -55,7 +67,7 @@ var WhybugChrome = {
       var domain = this.getDomainFromTab(tab);
       this.storage.get(domain, function(setting) {
         console.log('status for', domain, setting[domain])
-        callback(setting[domain]);
+        callback(setting[domain] || false);
       });
   },
 
@@ -71,38 +83,38 @@ var WhybugChrome = {
 };
 
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-    if (changeInfo.status !== 'loading') {return;}
+    if (changeInfo.status !== 'complete') {return;}
 
-    WhybugChrome.updateIcon(tab);
+    WhybugChrome.updateTab(tab);
 });
 
 chrome.tabs.onCreated.addListener(function(tab) {         
-    WhybugChrome.updateIcon(tab);
+    WhybugChrome.updateTab(tab);
 });
 
 chrome.pageAction.onClicked.addListener(function(tab) {
     WhybugChrome.toggleStatus(tab);
 });
 
-// When the extension is installed or upgraded ...
-chrome.runtime.onInstalled.addListener(function() {
-  // Replace all rules ...
-  chrome.declarativeContent.onPageChanged.removeRules(undefined, function() {
-    // With a new rule ...
-    chrome.declarativeContent.onPageChanged.addRules([
-      {
-        // That fires when a page's URL contains a 'g' ...
-        conditions: [
-          new chrome.declarativeContent.PageStateMatcher({
-            // pageUrl: { urlContains: 'localhost' },
-          })
-        ],
-        // And shows the extension's page action.
-        actions: [ new chrome.declarativeContent.ShowPageAction() ]
-      }
-    ]);
-  });
-});
+// // When the extension is installed or upgraded ...
+// chrome.runtime.onInstalled.addListener(function() {
+//   // Replace all rules ...
+//   chrome.declarativeContent.onPageChanged.removeRules(undefined, function() {
+//     // With a new rule ...
+//     chrome.declarativeContent.onPageChanged.addRules([
+//       {
+//         // That fires when a page's URL contains a 'g' ...
+//         conditions: [
+//           new chrome.declarativeContent.PageStateMatcher({
+//             // pageUrl: { urlContains: 'localhost' },
+//           })
+//         ],
+//         // And shows the extension's page action.
+//         actions: [ new chrome.declarativeContent.ShowPageAction() ]
+//       }
+//     ]);
+//   });
+// });
 
 /*
 Ideas:
@@ -114,19 +126,4 @@ Ideas:
  -  
 
 
-app.config(function($provide) {
-  $provide.decorator("$exceptionHandler", ['$delegate', function($delegate) {
-    return function(exception, cause) {
-      _errs.push(exception);
-      $delegate(exception, cause);
-    }
-  }])
-});
-
-(function() {
-  var reportError = function(e) { _errs.push(e); };
-  Ember.onerror = reportError;
-  Ember.RSVP.configure('onerror', reportError);
-  App.ApplicationRoute = Ember.Route.extend({actions: {error: reportError}});
-})();
 */

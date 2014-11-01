@@ -9,8 +9,8 @@
     "tabs",
     "storage",
     "declarativeContent",
-    "https://whybug.com/",
-    "http://whybug.com/"
+    "http://*/",
+    "https://*/"
   ],
 
   "background": { 
