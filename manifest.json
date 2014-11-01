@@ -1,14 +1,13 @@
 {
   "manifest_version": 2,
 
-  "name": "One-click Kittens",
-  "description": "This extension demonstrates a browser action with kittens.",
+  "name": "Whybug Javascript",
+  "description": "Whybug extension for Google Chrome tracks javascript errors and automatically searches for solutions.",
   "version": "1.0",
 
   "permissions" : [
     "tabs",
     "storage",
-    "declarativeContent",
     "http://*/",
     "https://*/"
   ],
@@ -17,8 +16,5 @@
     "scripts": ["background.js"] 
   },
 
-  "page_action": {
-    "default_icon": "icon1.png",
-    "default_title" : "Activate whybug for this website."
-  }
+  "page_action": {}
 }

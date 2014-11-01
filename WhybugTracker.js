@@ -1,40 +1,58 @@
+/**
+ * Tracks general javascript errors.
+ * 
+ * @type {Object}
+ */
 var JsTracker = {
   isActive: function () {
     return true;
   },
   register: function() {
-    // todo, register error handler
+    TraceKit.report.subscribe(WhybugTracker.track);
+    console.log('installed tracekit', TraceKit);
   },
   unregister: function() {
-
+    TraceKit.report.subscribe(WhybugTracker.track);
   }
 };
 
+/**
+ * Tracks angular errors.
+ * 
+ * @type {Object}
+ */
 var AngularTracker = {
   isActive: function () {
+    console.log('angular detected', typeof(angular) !== 'undefined');
     return typeof(angular) !== 'undefined';
   },
   register: function() {
     app.config(function($provide) {
       $provide.decorator("$exceptionHandler", ['$delegate', function($delegate) {
         return function(exception, cause) {
-          _errs.push(exception);
+          WhybugTracker.track(exception);
           $delegate(exception, cause);
         }
       }])
     });
   },
   unregister: function() {
+    
   }
 };
 
+/**
+ * Tracks angular errors.
+ * 
+ * @type {Object}
+ */
 var EmberTracker = {
   isActive: function() {
     return typeof(Ember) !== 'undefined';
   },
   register: function() {
     (function() {
-      var reportError = function(e) { _errs.push(e); };
+      var reportError = function(e) { WhybugTracker.track(e); };
       Ember.onerror = reportError;
       Ember.RSVP.configure('onerror', reportError);
       App.ApplicationRoute = Ember.Route.extend({actions: {error: reportError}});
@@ -66,6 +84,10 @@ var WhybugTracker = {
         tracker.unregister(); 
       }
     });
+  },
+
+  track: function(error) {
+    console.log('wuhu tracked an error: ', error); 
   }
 };
 

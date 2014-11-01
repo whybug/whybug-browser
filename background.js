@@ -31,12 +31,23 @@ var WhybugChrome = {
       tabId: tab.id,
       path: "./icon" + (enabled ? 2 : 1) + ".png"
     });
+    chrome.pageAction.setTitle({
+      tabId: tab.id,
+      title: enabled ? "Disable whybug for this website." : "Activate whybug for this website."
+    })
     chrome.pageAction.show(tab.id);
   },
 
   injectWhybug: function (tab, enabled) {
     if (enabled) {
-      chrome.tabs.executeScript(tab.id, {file: './WhybugTracker.js', runAt: 'document_start'});
+      chrome.tabs.executeScript(tab.id, {
+        file: './TraceKit.js', 
+        runAt: 'document_start'
+      });
+      chrome.tabs.executeScript(tab.id, {
+        file: './WhybugTracker.js', 
+        runAt: 'document_end'
+      });
     }
   },
 
