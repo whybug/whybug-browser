@@ -2,17 +2,21 @@ var ss = require("sdk/simple-storage");
 var tabs = require('sdk/tabs');
 var { ToggleButton } = require('sdk/ui/button/toggle');
 var panels = require("sdk/panel");
+var pageMod = require("sdk/page-mod");
+var urls = require("sdk/url");
 
 // Initialize storage.
-ss.storage.pages = ss.storage.pages || {};
+// There needs to be some valid default value.
+ss.storage.pages = ss.storage.pages || ["*.whybug.com"];
 
 var WhybugFirefox = {
+
   /**
    * Storage to use for domain .
    * 
    * @type {Object}
    */
-  storage: ss.storeage.pages,
+  storage: ss.storage.pages,
 
   updateTab: function (tab) {
     this.updateIcon(tab, this.getStatus(tab));
@@ -20,11 +24,8 @@ var WhybugFirefox = {
   },
 
   updateIcon: function (tab, enabled) {
-    button.icon = {
-      "16": "./icon-16.png",
-      "32": "./icon-32.png",
-      "64": "./icon-64.png"
-    };
+    console.log("update icon" , enabled);
+    button.icon = enabled ? iconEnabled : iconDisabled;
   },
 
   /**
@@ -35,7 +36,8 @@ var WhybugFirefox = {
    * @param  {Function} callback Callback with boolean param 'enabled'.
    */
   getStatus: function (tab, callback) {
-      return this.storage[this.getDomainFromTab(tab)] || false;
+      console.log("get status", this.storage);
+      return this.storage.indexOf(this.getDomainFromTab(tab)) !== -1;
   },
 
   /**
@@ -45,34 +47,63 @@ var WhybugFirefox = {
    * @return {String}     Domain name.
    */
   getDomainFromTab: function(tab) {
-    return new URL(tab.url).hostname;
+    console.log('getDomainFromTab', tab.url) 
+    return "*." + new urls.URL(tab.url).hostname;
+  },
+
+  toggleStatus: function (tab) {
+    var domain = this.getDomainFromTab(tab);
+    console.log('toggle status', domain, this.getStatus(tab), "to", !this.getStatus(tab));
+    if (this.getStatus(tab)) {
+      this.storage.splice(this.storage.indexOf(5), 1);
+    } else {
+      this.storage.push(domain);
+    }
+    this.updateTab(tab);
   }
+};
+
+var iconEnabled = {
+  "16": "./icon2.png",
+  "32": "./icon2.png",
+  "64": "./icon2.png"
+};
+
+var iconDisabled = {
+  "16": "./icon1.png",
+  "32": "./icon1.png",
+  "64": "./icon1.png"
 };
 
 var button = ToggleButton({
   id: "my-button",
   label: "my button",
-  icon: {
-    "16": "./icon-16.png",
-    "32": "./icon-32.png",
-    "64": "./icon-64.png"
-  },
+  icon: iconDisabled,
   onClick: function(state) {
-    console.log(tabs.activeTab.url);
+    WhybugFirefox.toggleStatus(tabs.activeTab);
     console.log(state);
   },
   onChange: function (state) {
     if (state.checked) {
-      panel.show({position: button});
+      // panel.show({position: button});
     }
   }
 });
 
-
-
-require("sdk/tabs").on("open", function(tab) {
+tabs.on('activate', function onOpen(tab) {
   WhybugFirefox.updateTab(tab);
 });
+
+pageMod.PageMod({
+  include: WhybugFirefox.storage,
+  onAttach: function onAttach(worker) {
+    WhybugFirefox.updateTab(worker.tab)
+  }
+});
+
+// require("sdk/tabs").on("open", function(tab) {
+//   WhybugFirefox.updateTab(tab);
+// });
 
 function handleHide() {
   button.state('window', {checked: false});
